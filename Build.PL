@@ -12,6 +12,7 @@ my $builder = Module::Build->new(
     build_requires => {
         'Test::More' => 0,
         'Test::Differences' => 0,
+        'POSIX' => 0,
     },
     add_to_cleanup      => [ 'WWW-CloudCreator-*' ],
 );

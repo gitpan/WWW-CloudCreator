@@ -1,9 +1,13 @@
+# $Id: $ $Revision: $ $Source: $ $Date: $
+
 package WWW::CloudCreator;
 
 use strict;
+use warnings;
+
 use POSIX qw(ceil floor);
 
-our $VERSION = '1.0';
+our $VERSION = '1.1';
 
 sub new {
 	my ($class, %args) = @_;
@@ -20,7 +24,9 @@ sub new {
 
 sub add {
 	my ( $self, $tag, $count ) = @_;
+	if (! $tag || ! $count) { return 0; }
 	$self->{counts}->{$tag} = $count;
+	return 1;
 }
 
 sub gencloud {
@@ -30,13 +36,13 @@ sub gencloud {
 	my $cold = $self->{'cold'} || '000';
 	my $hot = $self->{'hot'} || '000';
 	my $counts = $self->{'counts'};
-	my @tags = sort { $counts->{$b} <=> $counts->{$a} } keys %$counts;
-	my $ntags = scalar(@tags);
+	my @tags = sort { $counts->{$b} <=> $counts->{$a} } keys %{$counts};
+	my $ntags = scalar @tags;
 	if ($ntags == 0) {
-		return "";
+		return q{};
 	} elsif ($ntags == 1) {
 		my $tag = $tags[0];
-		return [ $tag, 1, 'font-size:'.$smallest.';' ];
+		return [ $tag, 1, 'font-size:' . $smallest . q{;} ];
 	}
 	my $min = $counts->{$tags[-1]};
 	my $max = $counts->{$tags[0]};
@@ -52,8 +58,8 @@ sub gencloud {
 	}
 	my (@hotarray, @coldarray, @coldval, @hotval, @colorspread, @colorstep);
 	if ($hot ne $cold) {
-		@hotarray = map { hex $_ } split(//, $hot);
-		@coldarray = map { hex $_ } split(//, $cold);
+		@hotarray = map { hex $_ } (split //xm, $hot);
+		@coldarray = map { hex $_ } (split //xm, $cold);
 		for my $i (0 .. 2) {
 			push @coldval, hexdec($coldarray[$i]);
 			push @hotval, hexdec($hotarray[$i]);
@@ -77,20 +83,25 @@ sub gencloud {
 				$color .= $decihex;
 			}
 		} else { $color = $cold; }
-		push @style, 'color: #'.$color.';';
+		push @style, 'color: #' . $color . q{;};
 		if ($largest != $smallest) {
-			push @style, 'font-size: '.round($fontsize).'pt;';
+			push @style, 'font-size: ' . round($fontsize) . 'pt;';
 		}
-		push @out, [ $tag, $counts->{$tag}, join '', @style];
+		push @out, [ $tag, $counts->{$tag}, join q{}, @style];
 	}
 	return @out;
 }
 
-sub round { my ($number) = @_; return int($number + .5 * ($number <=> 0)); }
+sub round { return int $_[0] + .5 * ($_[0] <=> 0); }
 
-sub dechex { my ($i) = @_; return sprintf("%x", $i); }
+sub dechex { return sprintf '%x', $_[0]; }
 
-sub hexdec { my ($i) = @_; return hex $i; }
+sub hexdec { return hex $_[0]; }
+
+1;
+__END__
+
+=pod
 
 =head1 NAME
 
@@ -109,7 +120,9 @@ WWW::CloudCreator - A weighted cloud creator
   $cloud->add('famiy', 12);
   $cloud->add('tech', 103);
   my @weights = $cloud->gencloud;
-  map { print 'tag: '.$_->[0].' - weight: '.$_->[1]."\n" } @weights;
+  foreach my $item (@weights) {
+    print 'tag: '.$item->[0].' - weight: '.$item->[1]."\n";
+  } 
 
 =head1 DESCRIPTION
 
@@ -252,5 +265,3 @@ This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.
 
 =cut
-
-1;
